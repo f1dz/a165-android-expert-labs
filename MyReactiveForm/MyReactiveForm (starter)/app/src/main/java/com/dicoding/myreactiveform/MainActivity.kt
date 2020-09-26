@@ -1,110 +1,76 @@
 package com.dicoding.myreactiveform
 
+import android.annotation.SuppressLint
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
 import android.util.Patterns
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import com.jakewharton.rxbinding2.widget.RxTextView
+import io.reactivex.Observable
+import io.reactivex.functions.Function3
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
 
-    private var emailValid = false
-    private var passwordValid = false
-    private var passwordConfirmationValid = false
-
+    @SuppressLint("CheckResult")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        validateButton()
-
-        ed_email.addTextChangedListener(object : TextWatcher {
-            override fun afterTextChanged(s: Editable?) {
+        val emailStream  = RxTextView.textChanges(ed_email)
+            .skipInitialValue()
+            .map { email ->
+                !Patterns.EMAIL_ADDRESS.matcher(email).matches()
             }
 
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
-            }
-
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                validateEmail()
-            }
-        })
-
-        ed_password.addTextChangedListener(object : TextWatcher {
-            override fun afterTextChanged(s: Editable?) {
-            }
-
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
-            }
-
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                validatePassword()
-            }
-        })
-
-        ed_confirm_password.addTextChangedListener(object : TextWatcher {
-            override fun afterTextChanged(s: Editable?) {
-            }
-
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
-            }
-
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                validatePasswordConfirmation()
-            }
-        })
-    }
-
-    fun validateEmail() {
-        // jika password tidak valid tampilkan peringatan
-        val input = ed_email.text.toString()
-        if (!Patterns.EMAIL_ADDRESS.matcher(input).matches()) {
-            emailValid = false
-            showEmailExistAlert(true)
-        } else {
-            emailValid = true
-            showEmailExistAlert(false)
+        emailStream.subscribe {
+            showEmailExistAlert(it)
         }
-        validateButton()
-    }
 
-    fun validatePassword() {
-        // jika password < 6 karakter tampilkan peringatan
-        val input = ed_password.text.toString()
-        if (input.length < 6) {
-            passwordValid = false
-            showPasswordMinimalAlert(true)
-        } else {
-            passwordValid = true
-            showPasswordMinimalAlert(false)
-        }
-        validateButton()
-    }
+        val passwordStream = RxTextView.textChanges(ed_password)
+            .skipInitialValue()
+            .map { password ->
+                password.length < 6
+            }
 
-    fun validatePasswordConfirmation() {
-        // jika konfirmasi password tidak sesuai tampilkan peringatan
-        val input = ed_confirm_password.text.toString()
-        if (input != ed_password.text.toString()) {
-            passwordConfirmationValid = false
-            showPasswordConfirmationAlert(true)
-        } else {
-            passwordConfirmationValid = true
-            showPasswordConfirmationAlert(false)
+        passwordStream.subscribe {
+            showPasswordMinimalAlert(it)
         }
-        validateButton()
-    }
 
-    private fun validateButton() {
-        // jika semua field sudah terisi, enable button submit
-        if (emailValid && passwordValid && passwordConfirmationValid) {
-            btn_register.isEnabled = true
-            btn_register.setBackgroundColor(ContextCompat.getColor(this, R.color.colorAccent))
-        } else {
-            btn_register.isEnabled = false
-            btn_register.setBackgroundColor(ContextCompat.getColor(this, android.R.color.darker_gray))
+        val passwordConfirmationStream = Observable.merge(
+            RxTextView.textChanges(ed_password)
+                .map { password ->
+                    password.toString() != ed_confirm_password.text.toString()
+                },
+            RxTextView.textChanges(ed_confirm_password)
+                .map { confirmPassword ->
+                    confirmPassword.toString() != ed_password.text.toString()
+                }
+        )
+
+        passwordConfirmationStream.subscribe {
+            showPasswordConfirmationAlert(it)
         }
+
+        val invalidFieldStream = Observable.combineLatest(
+            emailStream,
+            passwordStream,
+            passwordConfirmationStream,
+            Function3 { emailInvalid: Boolean, passwordInvalid: Boolean, passwordConfirmationInvalid: Boolean ->
+                !emailInvalid && !passwordInvalid && !passwordConfirmationInvalid
+            }
+        )
+
+        invalidFieldStream.subscribe { isValid ->
+            if(isValid) {
+                btn_register.isEnabled = true
+                btn_register.setBackgroundColor(ContextCompat.getColor(this, R.color.colorAccent))
+            } else {
+                btn_register.isEnabled = false
+                btn_register.setBackgroundColor(ContextCompat.getColor(this, android.R.color.darker_gray))
+            }
+        }
+
     }
 
     private fun showEmailExistAlert(isValid: Boolean) {
