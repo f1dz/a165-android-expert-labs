@@ -8,7 +8,7 @@ import org.koin.android.ext.android.inject
 
 class HomeActivity : AppCompatActivity() {
 
-    val userRepository: UserRepository by inject()
+    private val userRepository: UserRepository by inject()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
