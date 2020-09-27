@@ -1,20 +1,20 @@
 package com.dicoding.mysimplelogin
 
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_home.*
+import javax.inject.Inject
 
 class HomeActivity : AppCompatActivity() {
 
+    @Inject
     lateinit var userRepository: UserRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        (application as MyApp).appComponent.inject(this)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
-
-        val sesi = SessionManager(this)
-        userRepository = UserRepository.getInstance(sesi)
 
         tv_welcome.text = "Welcome ${userRepository.getUser()}"
 
