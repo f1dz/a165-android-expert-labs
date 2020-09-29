@@ -1,4 +1,4 @@
-package com.dicoding.mysimplelogin
+package `in`.khofid.core
 
 import android.content.Context
 import android.content.SharedPreferences

@@ -1,4 +1,4 @@
-package com.dicoding.mysimplelogin
+package `in`.khofid.core
 
 class UserRepository(private val sesi: SessionManager) {
 

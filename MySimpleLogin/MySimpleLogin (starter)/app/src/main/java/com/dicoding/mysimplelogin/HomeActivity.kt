@@ -1,8 +1,10 @@
 package com.dicoding.mysimplelogin
 
+import `in`.khofid.core.SessionManager
+import `in`.khofid.core.UserRepository
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_home.*
 
 class HomeActivity : AppCompatActivity() {
